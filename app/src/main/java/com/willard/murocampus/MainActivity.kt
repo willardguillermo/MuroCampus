@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.willard.murocampus.data.PostRepositoryRemote
 import com.willard.murocampus.data.remote.RetrofitClient
+import com.willard.murocampus.ui.PantallaCrear
 import com.willard.murocampus.ui.PantallaDetalle
 import com.willard.murocampus.ui.PantallaLista
 import com.willard.murocampus.ui.theme.MuroCampusTheme
@@ -49,9 +51,11 @@ fun AppMuroCampus(
     )
 ) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+    var creando by rememberSaveable { mutableStateOf(false) }
 
-    BackHandler(enabled = idSeleccionado != null) {
+    BackHandler(enabled = idSeleccionado != null || creando) {
         idSeleccionado = null
+        creando = false
     }
 
     Scaffold(
@@ -64,13 +68,31 @@ fun AppMuroCampus(
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
+        },
+        floatingActionButton = {
+            if (idSeleccionado == null && !creando) {
+                FloatingActionButton(
+                    onClick = {
+                        vm.reiniciarPublicacion()
+                        creando = true
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Text(text = "+", style = MaterialTheme.typography.headlineSmall)
+                }
+            }
         }
     ) { innerPadding ->
         val contenido = Modifier.padding(innerPadding)
         val id = idSeleccionado
 
-        if (id == null) {
-            PantallaLista(
+        when {
+            creando -> PantallaCrear(vm = vm, modifier = contenido)
+
+            id != null -> PantallaDetalle(vm = vm, id = id, modifier = contenido)
+
+            else -> PantallaLista(
                 vm = vm,
                 onAbrir = { nuevoId ->
                     vm.abrir(nuevoId)
@@ -78,8 +100,6 @@ fun AppMuroCampus(
                 },
                 modifier = contenido
             )
-        } else {
-            PantallaDetalle(vm = vm, id = id, modifier = contenido)
         }
     }
 }

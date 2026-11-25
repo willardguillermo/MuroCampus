@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.willard.murocampus.data.PostRepository
 import com.willard.murocampus.data.mensajeDe
 import com.willard.murocampus.model.Comentario
+import com.willard.murocampus.model.NuevoPost
 import com.willard.murocampus.model.Post
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -29,6 +30,9 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     private val _usuarioFiltro = MutableStateFlow<Int?>(null)
     val usuarioFiltro: StateFlow<Int?> = _usuarioFiltro.asStateFlow()
+
+    private val _publicacion = MutableStateFlow<UiState<Post>?>(null)
+    val publicacion: StateFlow<UiState<Post>?> = _publicacion.asStateFlow()
 
     private var trabajoLista: Job? = null
     private var trabajoDetalle: Job? = null
@@ -72,5 +76,19 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
                 }
             }
         }
+    }
+
+    fun publicar(titulo: String, texto: String) {
+        viewModelScope.launch {
+            _publicacion.value = UiState.Cargando
+            val nuevo = NuevoPost(userId = 1, title = titulo.trim(), body = texto.trim())
+            repo.crear(nuevo)
+                .onSuccess { _publicacion.value = UiState.Exito(it) }
+                .onFailure { _publicacion.value = UiState.Error(mensajeDe(it)) }
+        }
+    }
+
+    fun reiniciarPublicacion() {
+        _publicacion.value = null
     }
 }
