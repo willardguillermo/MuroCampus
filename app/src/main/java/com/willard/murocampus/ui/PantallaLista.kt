@@ -6,13 +6,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,13 +31,31 @@ fun PantallaLista(
     onAbrir: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val estado by vm.lista.collectAsStateWithLifecycle()
+    val estado by vm.listaVisible.collectAsStateWithLifecycle()
+    val busqueda by vm.busqueda.collectAsStateWithLifecycle()
     val usuarioFiltro by vm.usuarioFiltro.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
         FiltroUsuarios(
             seleccionado = usuarioFiltro,
             onElegir = { vm.filtrar(it) }
+        )
+
+        OutlinedTextField(
+            value = busqueda,
+            onValueChange = { vm.buscar(it) },
+            label = { Text(text = "Buscar por título") },
+            singleLine = true,
+            trailingIcon = if (busqueda.isNotEmpty()) {
+                {
+                    TextButton(onClick = { vm.buscar("") }) {
+                        Text(text = "✕")
+                    }
+                }
+            } else null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp)
         )
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -48,8 +69,13 @@ fun PantallaLista(
 
                 is UiState.Exito -> if (e.datos.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        val textoVacio = if (busqueda.trim().isNotEmpty()) {
+                            "Sin resultados para «$busqueda»"
+                        } else {
+                            "Sin publicaciones"
+                        }
                         Text(
-                            text = "Sin publicaciones",
+                            text = textoVacio,
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
