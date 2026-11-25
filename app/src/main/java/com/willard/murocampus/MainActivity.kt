@@ -2,6 +2,7 @@ package com.willard.murocampus
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +14,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.willard.murocampus.data.PostRepositoryRemote
 import com.willard.murocampus.data.remote.RetrofitClient
+import com.willard.murocampus.ui.PantallaDetalle
 import com.willard.murocampus.ui.PantallaLista
 import com.willard.murocampus.ui.theme.MuroCampusTheme
 import com.willard.murocampus.viewmodel.PostsViewModel
@@ -42,6 +48,12 @@ fun AppMuroCampus(
         factory = PostsViewModelFactory(PostRepositoryRemote(RetrofitClient.api))
     )
 ) {
+    var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    BackHandler(enabled = idSeleccionado != null) {
+        idSeleccionado = null
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -54,6 +66,20 @@ fun AppMuroCampus(
             )
         }
     ) { innerPadding ->
-        PantallaLista(vm = vm, modifier = Modifier.padding(innerPadding))
+        val contenido = Modifier.padding(innerPadding)
+        val id = idSeleccionado
+
+        if (id == null) {
+            PantallaLista(
+                vm = vm,
+                onAbrir = { nuevoId ->
+                    vm.abrir(nuevoId)
+                    idSeleccionado = nuevoId
+                },
+                modifier = contenido
+            )
+        } else {
+            PantallaDetalle(vm = vm, id = id, modifier = contenido)
+        }
     }
 }
