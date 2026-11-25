@@ -15,12 +15,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.willard.murocampus.data.PostRepositoryRemote
 import com.willard.murocampus.data.remote.RetrofitClient
@@ -30,6 +32,7 @@ import com.willard.murocampus.ui.PantallaLista
 import com.willard.murocampus.ui.theme.MuroCampusTheme
 import com.willard.murocampus.viewmodel.PostsViewModel
 import com.willard.murocampus.viewmodel.PostsViewModelFactory
+import com.willard.murocampus.viewmodel.UiState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +55,15 @@ fun AppMuroCampus(
 ) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var creando by rememberSaveable { mutableStateOf(false) }
+
+    val estadoEliminacion by vm.eliminacion.collectAsStateWithLifecycle()
+
+    LaunchedEffect(estadoEliminacion) {
+        if (estadoEliminacion is UiState.Exito) {
+            idSeleccionado = null
+            vm.reiniciarEliminacion()
+        }
+    }
 
     BackHandler(enabled = idSeleccionado != null || creando) {
         idSeleccionado = null
@@ -95,6 +107,7 @@ fun AppMuroCampus(
             else -> PantallaLista(
                 vm = vm,
                 onAbrir = { nuevoId ->
+                    vm.reiniciarEliminacion()
                     vm.abrir(nuevoId)
                     idSeleccionado = nuevoId
                 },
